@@ -4,7 +4,7 @@
  * @brief		:	Implementation of shell
  * @author	:	Heejun Lee (zaqq1414@gmail.com)
  * @since		:	2018-03-24
-*/
+ */
 
 #include <unistd.h>
 #include <sys/wait.h>
@@ -18,9 +18,12 @@
 
 int main(int argc, char *argv[]){
 		char input_str[MAX_STRING]; 
-		char *section = NULL; // Pointer to the each command
-		char *command[MAX_COMMAND][MAX_OPTION]; // Pointer array which store each command and options
-		char *option; //Pointer to a command and options in a section
+		// Pointer to the each command.
+		char *section = NULL;
+		// Pointer array which store each command and options
+		char *command[MAX_COMMAND][MAX_OPTION]; 
+		//Pointer to a command and options in a section
+		char *option; 
 
 		int num_commands;
 		int num_option;
@@ -35,7 +38,7 @@ int main(int argc, char *argv[]){
 				} else {
 						while (fgets(input_str, sizeof(input_str), fp) != NULL) {
 
-								// Delete the '\n'
+								// Replace the '\n' at the end of line to '\0'
 								input_str[strlen(input_str)-1] = '\0';
 								printf("%s\n",input_str);
 
@@ -49,7 +52,6 @@ int main(int argc, char *argv[]){
 										section = strtok_r(input_str, ";", &saved_ptr);
 
 										do {
-
 												if (!strncmp(section, "quit", 4)) {
 														printf("quit!\n");
 														exit(0);
@@ -57,6 +59,8 @@ int main(int argc, char *argv[]){
 
 												int num_option = 0;
 
+												// Parse a line(command) with seperator " "(space)
+												// to get command and command options.
 												option = strtok(section, " ");
 												while (option != NULL){
 														command[num_commands][num_option] = option;
@@ -202,11 +206,10 @@ int main(int argc, char *argv[]){
 														 }
 								}
 						}
-						// Wait for every child processes to exit/
+						// Wait for every child processes to exit.
 						while (wait(NULL) != -1)
 								continue;
 				}
 		}
 		return 0;
 }
-
