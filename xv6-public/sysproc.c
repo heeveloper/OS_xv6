@@ -94,3 +94,10 @@ sys_uptime(void)
 int sys_getppid(void){
 	return myproc()->parent->pid;
 }
+
+// system call yield.
+int
+sys_yield(void){
+	yield();
+	return 0;	//	not reached
+}

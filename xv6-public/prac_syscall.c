@@ -15,3 +15,4 @@ int sys_myfunction(void){
 		return -1;
 	return printk_str(str);
 }
+
