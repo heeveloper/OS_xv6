@@ -33,6 +33,9 @@ struct context {
 };
 
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+enum proclevel { QL0, QL1, QL2};
+enum timequantum { TQ0 = 1, TQ1 = 2, TQ2 = 4};
+enum timeallotment { TA0 = 5, TA1 = 10, TA2 = 100};
 
 // Per-process state
 struct proc {
@@ -47,8 +50,13 @@ struct proc {
   void *chan;                  // If non-zero, sleeping on chan
   int killed;                  // If non-zero, have been killed
   struct file *ofile[NOFILE];  // Open files
-  struct inode *cwd;           // Current directory
-  char name[16];               // Process name (debugging)
+	struct inode *cwd;           // Current directory
+	char name[16];               // Process name (debugging)
+	int ctime;                   // Time consumed in MLFQ scheduler
+	int queue_num;               // Queue number of MLFQ
+	int isStride;                // If zero(default), it follows MLFQ scheduler
+	int stride;                  // Stride value for Stride scheduler
+	int pass;                    // Pass value for Stride scheduler
 };
 
 // Process memory is laid out contiguously, low addresses first:
