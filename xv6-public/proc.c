@@ -505,6 +505,17 @@ getlev(void)
 	return myproc()->level;
 }
 
+// Inquire to obtain cpu share(%).
+int
+set_cpu_share(int share)
+{
+		myproc()->isStride = 1;
+		myproc()->stride = TOTALTICKET / share;
+		myproc()->pass = lowest_pass;
+
+		return share;
+}
+
 //PAGEBREAK: 36
 // Print a process listing to console.  For debugging.
 // Runs when user types ^P on console.

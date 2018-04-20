@@ -52,6 +52,7 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
 	struct inode *cwd;           // Current directory
 	char name[16];               // Process name (debugging)
+	
 	int ctime;                   // Time consumed in MLFQ scheduler
 	int level;                   // Level of MLFQ
 	int isStride;                // If zero(default), it follows MLFQ scheduler

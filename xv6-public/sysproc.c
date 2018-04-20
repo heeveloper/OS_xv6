@@ -107,3 +107,14 @@ sys_getlev(void)
 {
 	return getlev();
 }
+
+int
+sys_set_cpu_share(int share)
+{
+	if(share > remain_share){
+			return -1;
+	}
+	else{
+		return set_cpu_share(share);
+	}
+}

@@ -10,6 +10,10 @@ struct sleeplock;
 struct stat;
 struct superblock;
 
+// main.c
+extern int      remain_share;
+extern int      lowest_pass;
+
 // bio.c
 void            binit(void);
 struct buf*     bread(uint, uint);
@@ -121,6 +125,7 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 int             getlev(void);
+int             set_cpu_share(int);
 
 // swtch.S
 void            swtch(struct context**, struct context*);
