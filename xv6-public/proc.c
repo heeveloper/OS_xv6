@@ -391,6 +391,7 @@ yield(void)
   release(&ptable.lock);
 }
 
+
 // A fork child's very first scheduling by scheduler()
 // will swtch here.  "Return" to user space.
 void
@@ -494,6 +495,14 @@ kill(int pid)
   }
   release(&ptable.lock);
   return -1;
+}
+
+// Get the level of current process ready queue of MLFQ.
+// Returns one of the level of MLFQ (0/1/2)
+int
+getlev(void)
+{
+	return myproc()->level;
 }
 
 //PAGEBREAK: 36

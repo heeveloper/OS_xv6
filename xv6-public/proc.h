@@ -53,7 +53,7 @@ struct proc {
 	struct inode *cwd;           // Current directory
 	char name[16];               // Process name (debugging)
 	int ctime;                   // Time consumed in MLFQ scheduler
-	int queue_num;               // Queue number of MLFQ
+	int level;                   // Level of MLFQ
 	int isStride;                // If zero(default), it follows MLFQ scheduler
 	int stride;                  // Stride value for Stride scheduler
 	int pass;                    // Pass value for Stride scheduler
