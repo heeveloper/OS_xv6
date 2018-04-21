@@ -355,7 +355,7 @@ scheduler(void)
 
 		// Get the process which has the minimum pass.
 		int minimum_pass = 987654321;
-		struct proc *selectedproc = NULL;
+		struct proc *selectedproc = 0;
 		acquire(&ptable.lock);
 		for(p=ptable.proc; p<&ptable.proc[NPROC]; p++){
 				if(p->state != RUNNABLE)
@@ -371,7 +371,7 @@ scheduler(void)
 		// If there is no process in Stride scheduler,
 		// or the process which has the minimum pass value is mlfq,
 		// one more MLFQ scheduling is needed.
-		if(selectedproc == NULL || selectedproc->pass > mlfq.pass){
+		if(selectedproc == 0 || selectedproc->pass > mlfq.pass){
 			 //cprintf("MLFQ!!!!!! \n", selectedproc);
 			 
 			 // MLFQ scheduling below.
