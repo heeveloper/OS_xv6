@@ -56,6 +56,7 @@ struct proc {
 	int ticks;                   // Time consumed in a queue MLFQ scheduler
 	int level;                   // Level of MLFQ
 	int isStride;                // If zero(default), it follows MLFQ scheduler
+	int share;                   // Resource proportional share.
 	int stride;                  // Stride value for Stride scheduler
 	int pass;                    // Pass value for Stride scheduler
 };

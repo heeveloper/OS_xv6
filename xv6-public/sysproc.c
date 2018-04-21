@@ -109,12 +109,9 @@ sys_getlev(void)
 }
 
 int
-sys_set_cpu_share(int share)
+sys_set_cpu_share(void)
 {
-	if(share > remain_share){
-			return -1;
-	}
-	else{
+		int share;
+		argint(0, &share);
 		return set_cpu_share(share);
-	}
 }

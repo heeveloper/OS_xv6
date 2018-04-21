@@ -10,10 +10,6 @@ struct sleeplock;
 struct stat;
 struct superblock;
 
-// main.c
-extern int      remain_share;
-extern int      lowest_pass;
-
 // bio.c
 void            binit(void);
 struct buf*     bread(uint, uint);

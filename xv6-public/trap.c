@@ -14,7 +14,7 @@ extern uint vectors[];  // in vectors.S: array of 256 entry pointers
 struct spinlock tickslock;
 uint ticks;
 
-extern int time_allotment[3];
+extern int time_quantum[3];
 
 void
 tvinit(void)
@@ -53,8 +53,8 @@ trap(struct trapframe *tf)
       acquire(&tickslock);
       ticks++;
 			// Counts the timer interrupt occurrence
-			// to follow time allotment.
-      if(myproc())
+			// to follow time allotment in MLFQ scheduling.
+      if(myproc() && myproc()->isStride == FALSE)
 					myproc()->quantum++;
 			wakeup(&ticks);
       release(&tickslock);
@@ -106,12 +106,17 @@ trap(struct trapframe *tf)
     exit();
 
   // Force process to give up CPU on clock tick.
-  // If interrupts were on while locks held, would need to check nlock.
-  if(myproc() && myproc()->state == RUNNING &&
-     tf->trapno == T_IRQ0+IRQ_TIMER &&
-		 myproc()->quantum >= time_allotment[myproc()->level]){
-			myproc()->quantum = 0;
-			yield();
+	// If interrupts were on while locks held, would need to check nlock.
+	if(myproc() && myproc()->state == RUNNING &&
+					tf->trapno == T_IRQ0+IRQ_TIMER){
+			if(myproc()->isStride == FALSE &&
+							myproc()->quantum >= time_quantum[myproc()->level]){
+					myproc()->quantum = 0;
+					yield();
+			}
+			else if(myproc()->isStride){
+					yield();
+			}
 	}
 
   // Check if the process has been killed since we yielded

@@ -165,10 +165,9 @@ userinit(void)
 	// mlfq struct initialization.
 	mlfq.isMLFQ = 1;
 	mlfq.isStride = 1;
-  mlfq.stride = TOTALTICKET / 20;
+  mlfq.share = 20;	// default 20%
+	mlfq.stride = TOTALTICKET / 20;
 	mlfq.pass = 0;
-
-	remain_share -= 20;
 
 	release(&ptable.lock);
 }
@@ -345,7 +344,6 @@ scheduler(void)
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
-  cprintf("scheduler!!!!!!!!!!!!\n"); 
 
   for(;;){
     // Enable interrupts on this processor.
@@ -354,7 +352,7 @@ scheduler(void)
 		// Stride and MLFQ scheduler.
 
 		// Get the process which has the minimum pass.
-		int minimum_pass = 987654321;
+		int lowest_pass = 987654321;
 		struct proc *selectedproc = 0;
 		acquire(&ptable.lock);
 		for(p=ptable.proc; p<&ptable.proc[NPROC]; p++){
@@ -362,9 +360,9 @@ scheduler(void)
 						continue;
 				if(p->isStride == FALSE)
 						continue;
-				if(minimum_pass > p->pass){
-					minimum_pass = p->pass;
-					selectedproc = p;
+				if(lowest_pass > p->pass){
+						lowest_pass = p->pass;
+						selectedproc = p;
 				}
 		}
 
@@ -377,7 +375,12 @@ scheduler(void)
 			 // MLFQ scheduling below.
 			 // update mlfq pass value by its stride.
 			 mlfq.pass += mlfq.stride;
-			 
+			 if(selectedproc != 0 && mlfq.pass >= 100000000){
+					 for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+							 if(p->isStride)
+									 p->pass -= 100000000;
+					 }
+			 } 
 			 // level 0 (highest level)
 			 int found = FALSE;
 			 for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
@@ -439,6 +442,7 @@ scheduler(void)
 
 							 // Priority Boost
 							 if(p->ticks >= time_allotment[p->level]){
+									 //cprintf("Boost!!\n");
 									 p->ticks = 0;
 									 p->level = 0;
 							 }
@@ -447,16 +451,15 @@ scheduler(void)
 		}
 		// The selected process running in Stride scheduler.
 		else{
-				cprintf("STRIDE!!!!!!!\n");
 				c->proc = selectedproc;
-				switchuvm(p);
-				p->state = RUNNING;
-				p->pass += p->stride;
+				switchuvm(selectedproc);
+				selectedproc->state = RUNNING;
+				selectedproc->pass += selectedproc->stride;
 
 				// Switch to chosen process.  It is the process's job
 				// to release ptable.lock and then reacquire it
 				// before jumping back to us.
-				swtch(&(c->scheduler), p->context);
+				swtch(&(c->scheduler), selectedproc->context);
 				switchkvm();
 				
 				// Process is done running for now.
@@ -647,10 +650,35 @@ getlev(void)
 int
 set_cpu_share(int share)
 {
-		myproc()->isStride = 1;
-		myproc()->stride = TOTALTICKET / share;
-		myproc()->pass = lowest_pass;
+		struct proc *p;
+		int total_share = 0;
+		int lowest_pass = 987654321;
+		if(share < 0){
+				cprintf("Error : No negative share.\n");
+				return -1;
+		}
 
+		acquire(&ptable.lock);
+		for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+				if(p->isStride){
+						total_share += p->share;
+						if(lowest_pass > p->pass)
+								lowest_pass = p->pass;
+				}
+		}
+		release(&ptable.lock);
+
+		if(total_share + share > 80){
+				
+				cprintf("Error : Acceptable share(80%) exceed. %d %d\n",total_share, share);
+				return -1;
+		}
+
+		myproc()->isStride = TRUE;
+		myproc()->share = share;
+		myproc()->stride = TOTALTICKET / share;
+		myproc()->pass = (lowest_pass < mlfq.pass) ? lowest_pass : mlfq.pass;
+		
 		return share;
 }
 
