@@ -34,8 +34,6 @@ struct context {
 
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 enum proclevel { QL0, QL1, QL2};
-enum timequantum { TQ0 = 1, TQ1 = 2, TQ2 = 4};
-enum timeallotment { TA0 = 5, TA1 = 10, TA2 = 100};
 
 // Per-process state
 struct proc {

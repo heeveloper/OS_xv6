@@ -13,6 +13,8 @@ struct {
 } ptable;
 
 struct proc mlfq;
+int timequantum[3] = {1, 2, 4};
+int timeallotment[3] = {5, 10, 100};
 
 static struct proc *initproc;
 
@@ -341,12 +343,54 @@ scheduler(void)
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
-  
+  cprintf("scheduler!!!!!!!!!!!!\n"); 
   for(;;){
     // Enable interrupts on this processor.
     sti();
 
+		// Stride and MLFQ scheduler.
+		int minimum_pass = 987654321;
+		struct proc *selectedproc;
+		acquire(&ptable.lock);
+		for(p=ptable.proc; p<&ptable.proc[NPROC]; p++){
+				if(p->state != RUNNABLE)
+						continue;
+				if(p->isStride == FALSE)
+						continue;
+				if(minimum_pass > p->pass){
+					minimum_pass = p->pass;
+					selectedproc = p;
+				}
+		}
 
+		// If there is no process in Stride scheduler,
+		// or the process which has the minimum pass value is mlfq,
+		// one more MLFQ scheduling is needed.
+		if(minimum_pass == 987654321 || selectedproc->pass > mlfq.pass){
+			 cprintf("MLFQ!!!!!!\n");	
+		}
+		// The selected process running in Stride scheduler.
+		else{
+				cprintf("STRIDE!!!!!!!\n");
+				c->proc = selectedproc;
+				switchuvm(p);
+				p->state = RUNNING;
+				p->pass += p->stride;
+
+				// Switch to chosen process.  It is the process's job
+				// to release ptable.lock and then reacquire it
+				// before jumping back to us.
+				swtch(&(c->scheduler), p->context);
+				switchkvm();
+				
+				// Process is done running for now.
+				// It should have changed its p->state before coming back.
+				c->proc = 0;
+		}
+
+		release(&ptable.lock);
+
+		/* // RR scheduler
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
@@ -369,6 +413,7 @@ scheduler(void)
     }
     release(&ptable.lock);
 
+		*/
   }
 }
 
