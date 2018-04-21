@@ -12,6 +12,8 @@ struct {
   struct proc proc[NPROC];
 } ptable;
 
+struct proc mlfq;
+
 static struct proc *initproc;
 
 int nextpid = 1;
@@ -149,8 +151,22 @@ userinit(void)
   acquire(&ptable.lock);
 
   p->state = RUNNABLE;
+	
+	p->isMLFQ = 0;
+	p->ctime = 0;
+	p->level = QL0;
+	p->isStride = 0;
+	p->stride = 0;
+	p->pass = 0;
 
-  release(&ptable.lock);
+	mlfq.isMLFQ = 1;
+	mlfq.isStride = 1;
+  mlfq.stride = TOTALTICKET / 20;
+	mlfq.pass = 0;
+
+	remain_share -= 20;
+
+	release(&ptable.lock);
 }
 
 // Grow current process's memory by n bytes.
@@ -329,6 +345,7 @@ scheduler(void)
   for(;;){
     // Enable interrupts on this processor.
     sti();
+
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
