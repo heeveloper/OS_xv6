@@ -13,8 +13,8 @@ struct {
 } ptable;
 
 struct proc mlfq;
-int timequantum[3] = {1, 2, 4};
-int timeallotment[3] = {5, 10, 100};
+int time_quantum[3] = {1, 2, 4};
+int time_allotment[3] = {5, 10, 100};
 
 static struct proc *initproc;
 
@@ -155,12 +155,14 @@ userinit(void)
   p->state = RUNNABLE;
 	
 	p->isMLFQ = 0;
-	p->ctime = 0;
-	p->level = QL0;
-	p->isStride = 0;
+	p->quantum = 0;
+	p->ticks = 0;
+	p->level = 0;
+	p->isStride = 0; // If zero, MLFQ(default).
 	p->stride = 0;
 	p->pass = 0;
 
+	// mlfq struct initialization.
 	mlfq.isMLFQ = 1;
 	mlfq.isStride = 1;
   mlfq.stride = TOTALTICKET / 20;
@@ -344,13 +346,16 @@ scheduler(void)
   struct cpu *c = mycpu();
   c->proc = 0;
   cprintf("scheduler!!!!!!!!!!!!\n"); 
+
   for(;;){
     // Enable interrupts on this processor.
     sti();
 
 		// Stride and MLFQ scheduler.
+
+		// Get the process which has the minimum pass.
 		int minimum_pass = 987654321;
-		struct proc *selectedproc;
+		struct proc *selectedproc = NULL;
 		acquire(&ptable.lock);
 		for(p=ptable.proc; p<&ptable.proc[NPROC]; p++){
 				if(p->state != RUNNABLE)
@@ -366,8 +371,79 @@ scheduler(void)
 		// If there is no process in Stride scheduler,
 		// or the process which has the minimum pass value is mlfq,
 		// one more MLFQ scheduling is needed.
-		if(minimum_pass == 987654321 || selectedproc->pass > mlfq.pass){
-			 cprintf("MLFQ!!!!!!\n");	
+		if(selectedproc == NULL || selectedproc->pass > mlfq.pass){
+			 //cprintf("MLFQ!!!!!! \n", selectedproc);
+			 
+			 // MLFQ scheduling below.
+			 // update mlfq pass value by its stride.
+			 mlfq.pass += mlfq.stride;
+			 
+			 // level 0 (highest level)
+			 int found = FALSE;
+			 for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+					 if(p->state != RUNNABLE || p->isStride || p->level != 0)
+							 continue;
+					 
+					 found = TRUE;
+					 c->proc = p;
+					 p->ticks += time_quantum[p->level];
+					 switchuvm(p);
+					 p->state = RUNNING;
+
+					 swtch(&(c->scheduler), p->context);
+					 switchkvm();
+
+					 if(p->ticks >= time_allotment[p->level]){
+							 p->ticks = 0;
+							 p->level++;
+					 }
+					 c->proc = 0;
+			 }
+			 // level 1 (middle level)
+			 if(!found){
+					 for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+							 if(p->state != RUNNABLE || p->isStride || p->level != 1)
+									 continue;
+
+							 found = TRUE;
+							 c->proc = p;
+							 p->ticks += time_quantum[p->level];
+							 switchuvm(p);
+							 p->state = RUNNING;
+
+							 swtch(&(c->scheduler), p->context);
+							 switchkvm();
+
+							 if(p->ticks >= time_allotment[p->level]){
+									 p->ticks = 0;
+									 p->level++;
+							 }
+							 c->proc = 0;
+					 }
+			 }
+
+			 // level 2 (lowest level)
+			 if(!found){
+					 for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+							 if(p->state != RUNNABLE || p->isStride || p->level != 2)
+									 continue;
+
+							 found = TRUE;
+							 c->proc = p;
+							 p->ticks += time_quantum[p->level];
+							 switchuvm(p);
+							 p->state = RUNNING;
+
+							 swtch(&(c->scheduler), p->context);
+							 switchkvm();
+
+							 // Priority Boost
+							 if(p->ticks >= time_allotment[p->level]){
+									 p->ticks = 0;
+									 p->level = 0;
+							 }
+					 }
+			 }
 		}
 		// The selected process running in Stride scheduler.
 		else{

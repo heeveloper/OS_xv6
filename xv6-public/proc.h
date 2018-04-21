@@ -52,7 +52,8 @@ struct proc {
 	char name[16];               // Process name (debugging)
 
 	int isMLFQ;                  // If non-zero, which means MLFQ struct
-	int ctime;                   // Time consumed in MLFQ scheduler
+	int quantum;                 // The number of Timer interrupt occured.
+	int ticks;                   // Time consumed in a queue MLFQ scheduler
 	int level;                   // Level of MLFQ
 	int isStride;                // If zero(default), it follows MLFQ scheduler
 	int stride;                  // Stride value for Stride scheduler

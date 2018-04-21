@@ -13,4 +13,5 @@
 #define FSSIZE       1000  // size of file system in blocks
 #define TRUE          1
 #define FALSE         0
+#define NULL          0
 #define TOTALTICKET  10000 // the number of total tickets used in Stride scheduler
