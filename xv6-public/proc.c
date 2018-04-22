@@ -95,6 +95,18 @@ found:
 
   release(&ptable.lock);
 
+
+	// Additional initialization.
+	p->isMLFQ = FALSE;
+	p->quantum = 0;
+	p->ticks = 0;
+	p->level = 0;
+	p->isStride = FALSE;
+	p->share = 0;
+	p->stride = 0;
+	p->pass = 0;
+
+
   // Allocate kernel stack.
   if((p->kstack = kalloc()) == 0){
     p->state = UNUSED;
@@ -265,6 +277,10 @@ exit(void)
   iput(curproc->cwd);
   end_op();
   curproc->cwd = 0;
+
+	// Reset share value.
+	curproc->share = 0;
+	curproc->pass = 0;
 
   acquire(&ptable.lock);
 
@@ -660,6 +676,9 @@ set_cpu_share(int share)
 
 		acquire(&ptable.lock);
 		for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+				if(p->state == ZOMBIE)
+						continue;
+
 				if(p->isStride){
 						total_share += p->share;
 						if(lowest_pass > p->pass)
