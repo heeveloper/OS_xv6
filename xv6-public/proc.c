@@ -95,6 +95,16 @@ found:
 
   release(&ptable.lock);
 
+	// Additional initialization.
+	p->isMLFQ = FALSE;
+	p->quantum = 0;
+	p->ticks = 0;
+	p->level = 0;
+	p->isStride = FALSE;
+	p->share = 0;
+	p->stride = 0;
+	p->pass = 0;
+
   // Allocate kernel stack.
   if((p->kstack = kalloc()) == 0){
     p->state = UNUSED;
@@ -318,6 +328,15 @@ wait(void)
         p->name[0] = 0;
         p->killed = 0;
         p->state = UNUSED;
+
+				// Additional initialization.
+				p->isMLFQ = FALSE;
+				p->quantum = 0;
+				p->ticks = 0;
+				p->level = 0;
+				p->isStride = FALSE;
+			  p->share = 0;
+			  p->pass = 0;	
         release(&ptable.lock);
         return pid;
       }
@@ -374,22 +393,24 @@ scheduler(void)
 		// or the process which has the minimum pass value is mlfq,
 		// one more MLFQ scheduling is needed.
 		if(selectedproc == 0 || selectedproc->pass > mlfq.pass){
-			 //cprintf("MLFQ!!!!!! \n", selectedproc);
-			 
+			 //cprintf("MLFQ!!!!!!\n"); 
 			 // MLFQ scheduling below.
 			 // update mlfq pass value by its stride.
 			 mlfq.pass += mlfq.stride;
-			 if(selectedproc != 0 && mlfq.pass >= 100000000){
+			 if(mlfq.pass >= 100000000){
+					 mlfq.pass = 0;
 					 for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-							 if(p->isStride)
-									 p->pass -= 100000000;
+							 if(p->isStride){
+									 p->pass = 0;
+							 }
 					 }
 			 } 
 			 // level 0 (highest level)
 			 int found = FALSE;
 			 for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-					 if(p->state != RUNNABLE || p->isStride || p->level != 0)
+					 if(p->state != RUNNABLE || p->isStride || p->level != 0) {
 							 continue;
+					 }
 					 
 					 found = TRUE;
 					 c->proc = p;
@@ -405,6 +426,7 @@ scheduler(void)
 							 p->level++;
 					 }
 					 c->proc = 0;
+					 break;
 			 }
 			 // level 1 (middle level)
 			 if(!found){
@@ -426,6 +448,7 @@ scheduler(void)
 									 p->level++;
 							 }
 							 c->proc = 0;
+							 break;
 					 }
 			 }
 
@@ -450,11 +473,13 @@ scheduler(void)
 									 p->ticks = 0;
 									 p->level = 0;
 							 }
+							 break;
 					 }
 			 }
 		}
 		// The selected process running in Stride scheduler.
 		else{
+				//cprintf("STride!!!!!\n");
 				c->proc = selectedproc;
 				switchuvm(selectedproc);
 				selectedproc->state = RUNNING;
@@ -642,6 +667,45 @@ kill(int pid)
   return -1;
 }
 
+
+//PAGEBREAK: 36
+// Print a process listing to console.  For debugging.
+// Runs when user types ^P on console.
+// No lock to avoid wedging a stuck machine further.
+void
+procdump(void)
+{
+  static char *states[] = {
+  [UNUSED]    "unused",
+  [EMBRYO]    "embryo",
+  [SLEEPING]  "sleep ",
+  [RUNNABLE]  "runble",
+  [RUNNING]   "run   ",
+  [ZOMBIE]    "zombie"
+  };
+  int i;
+  struct proc *p;
+  char *state;
+  uint pc[10];
+
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->state == UNUSED)
+      continue;
+    if(p->state >= 0 && p->state < NELEM(states) && states[p->state])
+      state = states[p->state];
+    else
+      state = "???";
+    cprintf("%d %s %s", p->pid, state, p->name);
+    if(p->state == SLEEPING){
+      getcallerpcs((uint*)p->context->ebp+2, pc);
+      for(i=0; i<10 && pc[i] != 0; i++)
+        cprintf(" %p", pc[i]);
+    }
+    cprintf("\n");
+  }
+}
+
+
 // Get the level of current process ready queue of MLFQ.
 // Returns one of the level of MLFQ (0/1/2)
 int
@@ -684,41 +748,4 @@ set_cpu_share(int share)
 		myproc()->pass = (lowest_pass < mlfq.pass) ? lowest_pass : mlfq.pass;
 		
 		return share;
-}
-
-//PAGEBREAK: 36
-// Print a process listing to console.  For debugging.
-// Runs when user types ^P on console.
-// No lock to avoid wedging a stuck machine further.
-void
-procdump(void)
-{
-  static char *states[] = {
-  [UNUSED]    "unused",
-  [EMBRYO]    "embryo",
-  [SLEEPING]  "sleep ",
-  [RUNNABLE]  "runble",
-  [RUNNING]   "run   ",
-  [ZOMBIE]    "zombie"
-  };
-  int i;
-  struct proc *p;
-  char *state;
-  uint pc[10];
-
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p->state == UNUSED)
-      continue;
-    if(p->state >= 0 && p->state < NELEM(states) && states[p->state])
-      state = states[p->state];
-    else
-      state = "???";
-    cprintf("%d %s %s", p->pid, state, p->name);
-    if(p->state == SLEEPING){
-      getcallerpcs((uint*)p->context->ebp+2, pc);
-      for(i=0; i<10 && pc[i] != 0; i++)
-        cprintf(" %p", pc[i]);
-    }
-    cprintf("\n");
-  }
 }
