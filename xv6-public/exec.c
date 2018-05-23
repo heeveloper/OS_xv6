@@ -108,7 +108,12 @@ exec(char *path, char **argv)
   curproc->tf->esp = sp;
   switchuvm(curproc);
 
-  if(curproc->tid > 0){
+  // Process case.
+  if(curproc->tid == 0){
+    freevm(oldpgdir);
+  }
+  // Thread case.
+  else{
     acquire(&ptable.lock);
     for(p = ptable.proc ; p < &ptable.proc[NPROC]; p++){
       if(p->parent == curproc->parent && p->tid > 0 && p != curproc){
@@ -116,9 +121,6 @@ exec(char *path, char **argv)
       }
     }
     release(&ptable.lock);
-  }
-  else{
-    freevm(oldpgdir);
   }
 
   return 0;

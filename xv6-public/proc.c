@@ -188,7 +188,7 @@ userinit(void)
   // mlfq struct initialization.
   mlfq.isMLFQ = TRUE;
   mlfq.isStride = TRUE;
-  mlfq.share = 100;  // default 20%
+  mlfq.share = 100; 
   mlfq.stride = TOTALTICKET / mlfq.share;
   mlfq.pass = 0;
 
@@ -205,7 +205,6 @@ growproc(int n)
 
   // process case
   if(curproc->tid == 0){
-  //else{
     sz = curproc->sz;
     if(n > 0){
       if((sz = allocuvm(curproc->pgdir, sz, sz + n)) == 0)
@@ -218,7 +217,6 @@ growproc(int n)
   }
   // thread case
   else{
-  //if(curproc->tid > 0){
     sz = curproc->parent->sz;
     if(n > 0){
       if((sz = allocuvm(curproc->parent->pgdir, sz, sz + n)) == 0)
@@ -365,12 +363,7 @@ exitProcAndLWP(struct proc *curproc){
 
       p->level = 0;
       p->quantum = 0;
-      // It can be modified up to 20%.
       mlfq.share += p->share;
-      /*
-      if(mlfq.share > 20)
-        mlfq.share = 20;
-        */
       mlfq.stride = (int)(TOTALTICKET / mlfq.share);
 
       p->tid = 0;
@@ -444,8 +437,6 @@ exitLWPAndLWP(struct proc *curproc){
       p->quantum = 0;
 
       mlfq.share += p->share;
-      //if(mlfq.share > 20)
-      //  mlfq.share = 20;
       mlfq.stride = (int)(TOTALTICKET / mlfq.share);
 
       p->tid = 0;
@@ -1015,23 +1006,6 @@ set_cpu_share(int share)
    curproc->share = share;
    curproc->stride = (int)(TOTALTICKET / curproc->share);
    curproc->pass = (lowest_pass < mlfq.pass) ? lowest_pass : mlfq.pass;
-   /*
-   curproc->parent->isStride = TRUE; 
-   curproc->parent->share = (int)(share / curproc->parent->num_of_threads);
-   curproc->parent->stride = (int)(TOTALTICKET / curproc->parent->share);
-   curproc->parent->pass = (lowest_pass < mlfq.pass) ? lowest_pass : mlfq.pass;
-
-   acquire(&ptable.lock);
-   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p->parent == curproc->parent && p->tid > 0){
-      p->isStride = TRUE;
-      p->share = (int)(share / curproc->parent->num_of_threads);
-      p->stride = (int)(TOTALTICKET / p->share);
-      p->pass = curproc->parent->pass;
-    }
-   }
-   release(&ptable.lock);
-   */
   }
   
   // Update mlfq share.
@@ -1094,7 +1068,6 @@ thread_create(thread_t *thread, void *(*start_routine)(void *), void *arg){
   np->tf->eip = (uint)start_routine;
 
   // Set esp to current stack pointer.
-  //np->tf->esp = sp;
   np->tf->esp = np->sz - 8;
 
   // Copy opened files from parent process.
@@ -1229,17 +1202,17 @@ thread_join(thread_t thread, void **retval){
         p->pid = 0;
         p->parent = 0;
         p->killed = 0;
+        p->state = UNUSED;
 
+        // Scheduling initialization.
         p->level = 0;
         p->quantum = 0;
-
         mlfq.share += p->share;
         mlfq.stride = (int)(TOTALTICKET / mlfq.share);
-
-        p->tid = 0;
         p->share = 0;
         p->stride = 0;
-        p->state = UNUSED;
+        // Thread initialization.
+        p->tid = 0;
         p->num_of_threads = 0;
         p->retval = 0;
         release(&ptable.lock);
