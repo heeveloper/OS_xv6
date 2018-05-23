@@ -59,6 +59,15 @@ struct proc {
 	int share;                   // Resource proportional share.
 	int stride;                  // Stride value for Stride scheduler
 	int pass;                    // Pass value for Stride scheduler
+
+	thread_t tid;
+	int num_of_threads;          // Variable only main thread has which is non-zero
+	                             // (tid == 0 && num_of_threads == 0) process
+															 // (tid == 0 && num_of_threads != 0) main thread
+															 // (tid != 0 && num_of_threads == 0) normal thread
+	int sum_of_threads;          // Total number of threads created.
+	void *retval;                // Return value in thread.
+
 };
 
 // Process memory is laid out contiguously, low addresses first:
