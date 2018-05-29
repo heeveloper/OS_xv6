@@ -155,7 +155,7 @@ mkfs: mkfs.c fs.h
 
 # Prevent deletion of intermediate files, e.g. cat.o, after first build, so
 # that disk image changes after first build are persistent until clean.  More
-# details:
+/ details:
 # http://www.gnu.org/software/make/manual/html_node/Chained-Rules.html
 .PRECIOUS: %.o
 
@@ -183,6 +183,7 @@ UPROGS=\
 	_test_stride\
 	_threadtest\
 	_thread_fork\
+	_hugefiletest\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
@@ -254,7 +255,7 @@ EXTRA=\
 	ln.c ls.c mkdir.c rm.c stressfs.c usertests.c wc.c zombie.c\
 	printf.c umalloc.c my_userapp.c user_getppid.c user_yield.c\
 	test_master.c test_mlfq.c test_stride.c threadtest.c thread_fork.c\
-	README dot-bochsrc *.pl toc.* runoff runoff1 runoff.list\
+	hugefiletest.c README dot-bochsrc *.pl toc.* runoff runoff1 runoff.list\
 	.gdbinit.tmpl gdbutil\
 
 dist:
