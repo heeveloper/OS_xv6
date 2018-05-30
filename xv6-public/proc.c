@@ -335,7 +335,7 @@ exitProcAndLWP(struct proc *curproc){
           p->ofile[fd] = 0; 
         }    
       }   
-      // It can be removed!!. 
+      
       begin_op();
       iput(p->cwd);
       end_op();
