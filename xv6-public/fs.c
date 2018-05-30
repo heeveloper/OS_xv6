@@ -433,8 +433,9 @@ bmap(struct inode *ip, uint bn)
     a = (uint*)tbp->data;
 
     // Double indirect pointer access.
-    if((addr = a[bn / (NINDIRECT * NINDIRECT)]) == 0){
-      a[bn / (NINDIRECT * NINDIRECT)] = addr = balloc(ip->dev);
+    if((addr = a[bn / NDBINDIRECT]) == 0){
+    //if((addr = a[bn / (NINDIRECT * NINDIRECT)]) == 0){
+      a[bn / NDBINDIRECT] = addr = balloc(ip->dev);
       log_write(tbp);
     }
 
@@ -442,15 +443,15 @@ bmap(struct inode *ip, uint bn)
     a = (uint*)dbp->data;
 
     // Indirect pointer access.
-    if((addr = a[(bn % (NINDIRECT * NINDIRECT)) / NINDIRECT]) == 0){
-     a[(bn % (NINDIRECT * NINDIRECT)) / NINDIRECT] = addr = balloc(ip->dev);
+    if((addr = a[(bn % NDBINDIRECT) / NINDIRECT]) == 0){
+     a[(bn % NDBINDIRECT) / NINDIRECT] = addr = balloc(ip->dev);
      log_write(dbp);
     }
 
     bp = bread(ip->dev, addr);
     a = (uint*)bp->data;
-    if((addr = a[(bn % (NINDIRECT * NINDIRECT)) % NINDIRECT]) == 0){
-      a[(bn % (NINDIRECT * NINDIRECT)) % NINDIRECT] = addr = balloc(ip->dev);
+    if((addr = a[(bn % NDBINDIRECT) % NINDIRECT]) == 0){
+      a[(bn % NDBINDIRECT) % NINDIRECT] = addr = balloc(ip->dev);
       log_write(bp);
     }
 
