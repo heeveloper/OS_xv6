@@ -424,7 +424,7 @@ bmap(struct inode *ip, uint bn)
     return addr;
   }
 
-  bn -= NINDIRECT;
+  bn -= NDBINDIRECT;
   if(bn < NTRINDIRECT){
     // Load triple indirect block, allocating if necessary.
     if((addr = ip->addrs[NDIRECT + 2]) == 0)
