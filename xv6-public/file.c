@@ -156,3 +156,72 @@ filewrite(struct file *f, char *addr, int n)
   panic("filewrite");
 }
 
+int
+pwrite(struct file *f, char *addr, int n, int off){
+  int r;
+
+  if(f->writable == 0){
+    cprintf("NO WRITABLE\n");
+    return -1;
+  }
+  // This section would be removed or modified.
+  if(f->type == FD_PIPE)
+    return pipewrite(f->pipe, addr, n);
+  if(f->type == FD_INODE){
+    //cprintf("file size: %d, off : %d\n", f->ip->size, off);
+    while(f->off < off + n){
+      char tmp[1000] = {'?', };
+      filewrite(f, tmp, sizeof(tmp));
+    }
+    //cprintf("file size: %d, off : %d\n", f->ip->size, off);
+    int max = ((MAXOPBLOCKS-1-1-2) / 2) * 512;
+    int i = 0;
+    int local_off = off;
+    while(i < n){
+      int n1 = n - i;
+      if(n1 > max)
+        n1 = max;
+
+      begin_op();
+      ilock(f->ip);
+      if((r = writei(f->ip, addr + i, local_off, n1)) > 0)
+        local_off += r;
+      iunlock(f->ip);
+      end_op();
+
+      if(r < 0)
+        break;
+      if(r != n1)
+        panic("short pwrite");
+      i += r;
+    }
+    //cprintf("i : %d n : %d\n",i, n);
+    return i == n ? n : -1;
+  }
+  panic("pwrite");
+}
+
+// Read from file f at offset off.
+int
+pread(struct file *f, char *addr, int n, int off){
+  int r;
+  int local_off;
+
+  if(f->readable == 0)
+    return -1;
+  // This section would be removed or modified.
+  if(f->type == FD_PIPE)
+    return piperead(f->pipe, addr, n);
+  if(f->type == FD_INODE){
+    //cprintf("file off : %d\n",f->off);
+    ilock(f->ip);
+    //if((r = readi(f->ip, addr, f->off, off)) > 0)
+    //  f->off += r;
+    local_off = off;
+    if((r = readi(f->ip, addr, local_off, n)) > 0)
+      local_off += r;
+    iunlock(f->ip);
+    return r;
+  }
+  panic("pread");
+}
