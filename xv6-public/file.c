@@ -131,7 +131,7 @@ filewrite(struct file *f, char *addr, int n)
     // and 2 blocks of slop for non-aligned writes.
     // this really belongs lower down, since writei()
     // might be writing a device like the console.
-    int max = ((MAXOPBLOCKS-1-1-2) / 2) * 512;
+    int max = ((MAXOPBLOCKS-1-1-1-1-2) / 2) * 512;
     int i = 0;
     while(i < n){
       int n1 = n - i;
@@ -161,21 +161,20 @@ pwrite(struct file *f, char *addr, int n, int off){
   int r;
 
   if(f->writable == 0){
-    cprintf("NO WRITABLE\n");
     return -1;
   }
-  // This section would be removed or modified.
-  if(f->type == FD_PIPE)
-    return pipewrite(f->pipe, addr, n);
+  //if(f->type == FD_PIPE)
+  //  return pipewrite(f->pipe, addr, n);
   if(f->type == FD_INODE){
     while(f->ip->size < off + n){
-      //cprintf("f->off : %d\n", f->off);
-      char tmp[1000] = {'?', };
+      char tmp[1000] = {' ', };
       filewrite(f, tmp, sizeof(tmp));
     }
-    int max = ((MAXOPBLOCKS-1-1-2) / 2) * 512;
+    
+    int max = ((MAXOPBLOCKS-1-1-1-1-2) / 2) * 512;
     int i = 0;
     int local_off = off;
+    
     while(i < n){
       int n1 = n - i;
       if(n1 > max)
@@ -203,18 +202,14 @@ pwrite(struct file *f, char *addr, int n, int off){
 int
 pread(struct file *f, char *addr, int n, int off){
   int r;
-  int local_off;
 
   if(f->readable == 0)
     return -1;
-  // This section would be removed or modified.
-  if(f->type == FD_PIPE)
-    return piperead(f->pipe, addr, n);
+  //if(f->type == FD_PIPE)
+  //  return piperead(f->pipe, addr, n);
   if(f->type == FD_INODE){
     ilock(f->ip);
-    local_off = off;
-    if((r = readi(f->ip, addr, local_off, n)) > 0)
-      local_off += r;
+    r = readi(f->ip, addr, off, n);
     iunlock(f->ip);
     return r;
   }
