@@ -42,13 +42,9 @@ pwritetestmain(void *arg)
   int start = FSIZE_PER_THREAD * tid;
   int end = start + FSIZE_PER_THREAD;
 
-  /*
   for(i = 0; i < BUFSIZE; i++)
     data[i] = (tid + i) % 128;
-*/
-  for(i = 0; i < BUFSIZE; i++)
-    data[i] = tid + 'A';
-  
+
   printf(1, "Thread #%d is writing (%d ~ %d)\n", tid, start, end);
   
   for(off = start; off < end; off+=BUFSIZE){
@@ -111,9 +107,7 @@ preadtestmain(void *arg)
       exit();
     }
     for (i = 0; i < BUFSIZE; i++) {
-      if (buf[i] != tid + 'A') {
-        printf(1, "tid : %d off : %d i: %d read : %c expect : %c\n",tid, off, i, buf[i], tid + 'A');
-        printf(1, "tid : %d off : %d i: %d read : %c expect : %c\n",tid, off, i+1, buf[i+1], tid + 'A');
+      if (buf[i] != (tid + i) % 128) {
         printf(1, "data inconsistency detected\n");
         exit();
       }
